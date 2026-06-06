@@ -35,7 +35,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip setuptools
         pip install flake8==7.3.0 flake8-isort==7.0.0
-        pip install -r ./backend/requirements.txt 
+        pip install -r ./backend/requirements.txt
     # Этот шаг дополним переменными для доступа к БД
     - name: Test with flake8 and django tests
       # Добавляем env-переменные для доступа к БД
@@ -51,3 +51,29 @@ jobs:
         python -m flake8 backend/
         cd backend/
         python manage.py test
+  # Добавляем новую задачу: деплой приложения
+  build_and_push_to_docker_hub:
+    name: Push Docker image to DockerHub
+    runs-on: ubuntu-latest
+    needs: tests
+    steps:
+      - name: Check out the repo
+        # Получение исходного кода из репозитория
+        uses: actions/checkout@v3
+      - name: Set up Docker Buildx
+        # Установка сборщика контейнеров Docker
+        uses: docker/setup-buildx-action@v2
+      - name: Login to Docker
+        # Авторизация на Docker Hub
+        uses: docker/login-action@v2
+        # При помощи with передаём в action параметры username и password
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Push to DockerHub
+        uses: docker/build-push-action@v4
+        with:
+          context: ./backend/
+          push: true
+          tags: yana122021/taski_backend:latest
